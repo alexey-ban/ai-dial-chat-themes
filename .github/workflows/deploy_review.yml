@@ -1,0 +1,43 @@
+name: Deploy Review
+
+on:
+  pull_request:
+    branches: [development]
+
+jobs:
+  create_env:
+    uses: ./.github/workflows/create_env.yml
+    secrets: inherit
+    with:
+      environment_name: pr-${{ github.event.pull_request.number }}
+      environment_url: "https://chat-ai-dial-themes-pr-${{ github.event.pull_request.number }}.gke.test.epam-rail.com"
+
+  # build_review_docker:
+  #   uses: alexey-ban/ai-dial-ci/.github/workflows/generic_docker_review.yml@main
+  #   secrets: inherit   
+  #   needs:
+  #     - create_env
+  #   with:
+  #     environment_name: pr-${{ github.event.pull_request.number }}
+      
+  deploy_helm:
+    uses: ./.github/workflows/helm_deploy.yml
+    needs:
+      - create_env
+      # - build_review_docker
+    with:
+      cloud_provider: "gcp"
+      k8s_namespace: ${{ github.repository_id }}-pr-${{ github.event.pull_request.number }}
+      helm_values_file: "./build/helm/review.yaml"
+      helm_values: "global.url=ai-dial-themes-pr-${{ github.event.pull_request.number }}.gke.test.epam-rail.com"
+      helm_extra_args: "--set-file core.extraConfig=./build/helm/review_core.json"
+      # environment_name: pr-${{ github.event.pull_request.number }}
+
+  run_e2e:
+    uses: ./.github/workflows/e2e.yml
+    needs:
+      - deploy_helm
+    with:
+      url: "https://chat-ai-dial-themes-pr-${{ github.event.pull_request.number }}.gke.test.epam-rail.com"
+      environment_name: pr-${{ github.event.pull_request.number }}
+      # repository: ""
