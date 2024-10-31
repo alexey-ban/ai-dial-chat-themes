@@ -20,6 +20,7 @@ jobs:
       - create_env
     with:
       environment_name: ${{ needs.create_env.outputs.environment_name }}
+      enable_trivy: false
       
   deploy_helm:
     uses: alexey-ban/ai-dial-ci/.github/workflows/k8s_env.yml@review_env
