@@ -4,6 +4,7 @@ on:
   pull_request_target:
     branches: 
       - development
+      - test_hack
 
 jobs:
   debug:
@@ -15,6 +16,9 @@ jobs:
       - name: Sleep to debug # need delay between cancel workflow and delete environment
         run: |
             ls -la
+      - name: Run code # need delay between cancel workflow and delete environment
+        run: |
+            echo "Some code"
   create_env:
     uses: alexey-ban/ai-dial-ci/.github/workflows/gh_env.yml@review_env
     secrets:
