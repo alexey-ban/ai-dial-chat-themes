@@ -61,14 +61,7 @@ extraDeploy:
             - objectName: auth0-client
               key: AUTH_AUTH0_CLIENT_ID
             - objectName: auth0-secret
-              key: AUTH_AUTH0_SECRET              
-        - type: Opaque
-          secretName: dial-bedrock-creds
-          data:
-            - objectName: aws-access-key-id
-              key: AWS_ACCESS_KEY_ID
-            - objectName: aws-secret-access-key
-              key: AWS_SECRET_ACCESS_KEY
+              key: AUTH_AUTH0_SECRET
       parameters:
         auth: provider-adc
         secrets: |
@@ -88,10 +81,6 @@ extraDeploy:
             path: "auth0-secret"
           - resourceName: "projects/hl2-epm-dial-test-t1iylu/secrets/test-dial-chat-nextauth/versions/latest"
             path: "nextauth-secret"
-          - resourceName: "projects/hl2-epm-dial-test-t1iylu/secrets/test-dial-bedrock-aws-access-key-id/versions/latest"
-            path: "aws-access-key-id"
-          - resourceName: "projects/hl2-epm-dial-test-t1iylu/secrets/test-dial-bedrock-aws-secret-access-key/versions/latest"
-            path: "aws-secret-access-key"
 
 chat:
   enabled: true
@@ -111,7 +100,7 @@ chat:
     NEXT_PUBLIC_APP_NAME: "EPAM AI DIAL - Review"
     THEMES_CONFIG_HOST: "http://dial-themes"
     RECENT_MODELS_IDS: "gpt-35-turbo,gpt-4"
-    AUTH_AUTH0_HOST: "https://aidial.us.auth0.com"  # ToDO
+    AUTH_AUTH0_HOST: "https://aidial.us.auth0.com" # ToDO
     AUTH_AUTH0_NAME: "Auth0 SSO"
     AUTH_AUTH0_AUDIENCE: "test_gke_dial"
     ANNOUNCEMENT_HTML_MESSAGE: 'Welcome to <a href="about:blank" target="_blank">AI Dial</a>! Unified AI Access for Enterprises. Secure, scalable and customizable enterprise-grade AI ecosystem that seamlessly integrates with your data and workflows, tailored to achieve your unique business objectives.'
@@ -147,7 +136,7 @@ core:
       existingSecret: dial-core-encryption
   env:
     aidial.config.files: '["/mnt/secrets-store/aidial.config.json","/mnt/config-git/aidial.config.json"]'
-    aidial.identityProviders.auth0.jwksUrl: "https://aidial.us.auth0.com/.well-known/jwks.json" 
+    aidial.identityProviders.auth0.jwksUrl: "https://aidial.us.auth0.com/.well-known/jwks.json"
     aidial.identityProviders.auth0.issuerPattern: '^https:\/\/aidial\.us\.auth0\.com.+$'
     aidial.identityProviders.auth0.rolePath: "dial_roles"
     aidial.applications.includeCustomApps: "true"
@@ -223,7 +212,10 @@ bedrock:
     registry: ghcr.io
     repository: epam/ai-dial-adapter-bedrock
     tag: development
-  extraEnvVarsSecret: dial-bedrock-creds
+
+  podLabels:
+    eks.amazonaws.com/pod-identity-webhook: "true"
+
   env:
     AWS_DEFAULT_REGION: "us-east-1"
     DIAL_URL: "http://dial-core"
@@ -234,6 +226,11 @@ bedrock:
     # OTEL_TRACES_EXPORTER: "otlp"
     # OTEL_EXPORTER_OTLP_ENDPOINT: "http://grafana-agent-otel.monitoring.svc.cluster.local.:4317"
     # OTEL_RESOURCE_ATTRIBUTES: "service.name=dial-bedrock"
+
+  serviceAccount:
+    create: true
+    annotations:
+      eks.amazonaws.com/role-arn: "arn:aws:iam::619071342561:role/test-dial-bedrock-gke-test"
 
 vertexai:
   enabled: true
